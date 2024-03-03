@@ -12,19 +12,15 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 100dvh;
   padding: 0;
   margin: 0;
   box-sizing: border-box;
+  min-height: 100dvh;
 }
 
-/* body {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  margin: 0 auto;
-  min-width: 320px;
-} */
-
-
+.helpImg{
+  object-fit: scale-down;
+  max-width: 100%;
+display: block;
+margin: auto;
+}

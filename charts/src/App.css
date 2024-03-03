@@ -3,22 +3,33 @@
   text-align: center;
 }
 
+.dark-mode-button{
+  position: sticky;
+  display: none;
+  top: 0;
+}
 .chart{
-  padding: 20px;
-  border-radius: 10px;
-  /* margin: 10px; */
+  padding: 10px;
   height: 500px;
 }
 .select{
-  margin: 10px;
+  margin: 20px 0px 0 0px;
   display: flex;
-  gap: 10px;
+  gap: 5px;
   padding: 20px;
-  border-radius: 10px;
 }
 
 .MuiChartsAxis-label{
   transform: translateX(-10px) !important;
+}
+body{
+  transition: all 0.2s ease-in-out;
+}
+
+.help{
+  padding: 20px;
+  width: 300px;
+  text-align: justify;
 }
 
 @media (min-width: 800px) {
@@ -32,12 +43,20 @@ h1 {
   line-height: 1.1;
 }
 
+
 @media (max-width: 800px) {
   .chart{
     height: 300px;
   }
   h1{
     font-size: 2em;
+  }
+  body{
+    width: 95%;
+    max-width: 800px;
+  }
+  .help{
+    width: 200px;
   }
 }
 

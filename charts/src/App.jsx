@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
-import Button from "@mui/joy/Button";
-import SvgIcon from "@mui/joy/SvgIcon";
-import { styled } from "@mui/joy";
+import React, { useState, useEffect, useMemo } from "react";
+import Button from "@mui/material/Button";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { styled } from "@mui/material";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
@@ -9,7 +10,13 @@ import Select from "@mui/material/Select";
 import Chart from "./Chart.jsx";
 import Paper from "@mui/material/Paper";
 import Grow from "@mui/material/Grow";
-
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+import IconButton from "@mui/material/IconButton";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import HelpIcon from "@mui/icons-material/Help";
+import Drawer from "@mui/material/Drawer";
 import "./App.css";
 
 function App() {
@@ -18,6 +25,10 @@ function App() {
   const [active, setActive] = useState(false);
   const [selectedExercise, setExercise] = useState("");
   const [selectedChartType, setChartType] = useState("Max weight");
+  const [darkMode, setDarkMode] = useState(
+    useMediaQuery("(prefers-color-scheme: dark)")
+  );
+  const [open, setOpen] = React.useState(false);
 
   const VisuallyHiddenInput = styled("input")`
     clip: rect(0 0 0 0);
@@ -36,6 +47,13 @@ function App() {
   }, [rawData, selectedChartType]);
 
   const handleFileChange = (event) => {
+    const fileExtension = event.target.files[0].type.split("/")[1];
+    if (!["csv"].includes(fileExtension)) {
+      setActive(false);
+      alert("Please input a csv file");
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = async ({ target }) => {
       const contents = target.result;
@@ -52,9 +70,19 @@ function App() {
           const value = line[j]?.trim().replaceAll('"', "");
           item[key] = value;
         }
-
         parsedData.push(item);
       }
+      if (
+        !parsedData[0].hasOwnProperty("Date") ||
+        !parsedData[0].hasOwnProperty("Exercise Name") ||
+        !parsedData[0].hasOwnProperty("Reps") ||
+        !parsedData[0].hasOwnProperty("Weight")
+      ) {
+        setActive(false);
+        alert("Please input a csv file exported from Strong");
+        return;
+      }
+
       setActive(true);
       setRawData(parsedData);
     };
@@ -66,22 +94,26 @@ function App() {
       const exercises = {};
 
       for (const record of rawData) {
-        const weight = parseFloat(record.Weight);
+        if (record.Date) {
+          const weight = parseFloat(record.Weight);
 
-        if (!exercises.hasOwnProperty(record["Exercise Name"])) {
-          exercises[record["Exercise Name"]] = {
-            [record.Date]: weight,
-          };
-        } else {
-          if (exercises[record["Exercise Name"]].hasOwnProperty(record.Date)) {
-            if (exercises[record["Exercise Name"]][record.Date] < weight) {
-              exercises[record["Exercise Name"]][record.Date] = weight;
-            }
-          } else {
+          if (!exercises.hasOwnProperty(record["Exercise Name"])) {
             exercises[record["Exercise Name"]] = {
-              ...exercises[record["Exercise Name"]],
               [record.Date]: weight,
             };
+          } else {
+            if (
+              exercises[record["Exercise Name"]].hasOwnProperty(record.Date)
+            ) {
+              if (exercises[record["Exercise Name"]][record.Date] < weight) {
+                exercises[record["Exercise Name"]][record.Date] = weight;
+              }
+            } else {
+              exercises[record["Exercise Name"]] = {
+                ...exercises[record["Exercise Name"]],
+                [record.Date]: weight,
+              };
+            }
           }
         }
       }
@@ -90,22 +122,26 @@ function App() {
       const exercises = {};
 
       for (const record of rawData) {
-        const reps = parseInt(record.Reps);
+        if (record.Date) {
+          const reps = parseInt(record.Reps);
 
-        if (!exercises.hasOwnProperty(record["Exercise Name"])) {
-          exercises[record["Exercise Name"]] = {
-            [record.Date]: reps,
-          };
-        } else {
-          if (exercises[record["Exercise Name"]].hasOwnProperty(record.Date)) {
-            if (exercises[record["Exercise Name"]][record.Date] < reps) {
-              exercises[record["Exercise Name"]][record.Date] = reps;
-            }
-          } else {
+          if (!exercises.hasOwnProperty(record["Exercise Name"])) {
             exercises[record["Exercise Name"]] = {
-              ...exercises[record["Exercise Name"]],
               [record.Date]: reps,
             };
+          } else {
+            if (
+              exercises[record["Exercise Name"]].hasOwnProperty(record.Date)
+            ) {
+              if (exercises[record["Exercise Name"]][record.Date] < reps) {
+                exercises[record["Exercise Name"]][record.Date] = reps;
+              }
+            } else {
+              exercises[record["Exercise Name"]] = {
+                ...exercises[record["Exercise Name"]],
+                [record.Date]: reps,
+              };
+            }
           }
         }
       }
@@ -114,24 +150,29 @@ function App() {
       const exercises = {};
 
       for (const record of rawData) {
-        const onerep = Math.floor(
-          parseFloat(record.Weight) / (1.0278 - 0.0278 * parseInt(record.Reps))
-        );
+        if (record.Date) {
+          const onerep = Math.floor(
+            parseFloat(record.Weight) /
+              (1.0278 - 0.0278 * parseInt(record.Reps))
+          );
 
-        if (!exercises.hasOwnProperty(record["Exercise Name"])) {
-          exercises[record["Exercise Name"]] = {
-            [record.Date]: onerep,
-          };
-        } else {
-          if (exercises[record["Exercise Name"]].hasOwnProperty(record.Date)) {
-            if (exercises[record["Exercise Name"]][record.Date] < onerep) {
-              exercises[record["Exercise Name"]][record.Date] = onerep;
-            }
-          } else {
+          if (!exercises.hasOwnProperty(record["Exercise Name"])) {
             exercises[record["Exercise Name"]] = {
-              ...exercises[record["Exercise Name"]],
               [record.Date]: onerep,
             };
+          } else {
+            if (
+              exercises[record["Exercise Name"]].hasOwnProperty(record.Date)
+            ) {
+              if (exercises[record["Exercise Name"]][record.Date] < onerep) {
+                exercises[record["Exercise Name"]][record.Date] = onerep;
+              }
+            } else {
+              exercises[record["Exercise Name"]] = {
+                ...exercises[record["Exercise Name"]],
+                [record.Date]: onerep,
+              };
+            }
           }
         }
       }
@@ -140,55 +181,107 @@ function App() {
       const exercises = {};
 
       for (const record of rawData) {
-        const volume = parseFloat(record.Weight) * record.Reps;
-        if (!exercises.hasOwnProperty(record["Exercise Name"])) {
-          exercises[record["Exercise Name"]] = {
-            [record.Date]: volume,
-          };
-        } else {
-          if (exercises[record["Exercise Name"]].hasOwnProperty(record.Date)) {
-            exercises[record["Exercise Name"]][record.Date] += volume;
-          } else {
+        if (record.Date) {
+          const volume = parseFloat(record.Weight) * record.Reps;
+          if (!exercises.hasOwnProperty(record["Exercise Name"])) {
             exercises[record["Exercise Name"]] = {
-              ...exercises[record["Exercise Name"]],
               [record.Date]: volume,
             };
+          } else {
+            if (
+              exercises[record["Exercise Name"]].hasOwnProperty(record.Date)
+            ) {
+              exercises[record["Exercise Name"]][record.Date] += volume;
+            } else {
+              exercises[record["Exercise Name"]] = {
+                ...exercises[record["Exercise Name"]],
+                [record.Date]: volume,
+              };
+            }
           }
         }
       }
       setData(exercises);
     }
   }
+  const theme = createTheme({
+    palette: {
+      mode: darkMode ? "dark" : "light",
+    },
+
+    "@global": {
+      "*::-webkit-scrollbar": {
+        width: "0.4em",
+      },
+      "*::-webkit-scrollbar-track": {
+        "-webkit-box-shadow": "inset 0 0 6px rgba(0,0,0,0.00)",
+      },
+      "*::-webkit-scrollbar-thumb": {
+        backgroundcolor: "rgba(0,0,0,.1)",
+        outline: "1px solid slategrey",
+      },
+    },
+  });
 
   return (
-    <>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Drawer
+        open={open}
+        onClose={() => {
+          setOpen(false);
+        }}
+      >
+        <div className="help">
+          <p>
+            To generate charts for your gym result, first you need to export
+            data from Strong app.
+          </p>
+          <img className="helpImg" src="./export.gif" alt="loading..." />
+          <p>
+            After exporting your data, next step is to upload the file you
+            saved.
+          </p>
+          <img className="helpImg" src="./button.gif" alt="loading..." />
+          <p>
+            Done! Now select an exercise and a chart type to display desired
+            data.
+          </p>
+        </div>
+      </Drawer>
+      <IconButton
+        onClick={() => {
+          darkMode ? setDarkMode(false) : setDarkMode(true);
+        }}
+        aria-label="dark-mode"
+        sx={{ position: "fixed", top: 20, right: 20 }}
+      >
+        {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+      </IconButton>
+      <IconButton
+        onClick={() => {
+          setOpen(true);
+        }}
+        aria-label="help"
+        sx={{ position: "fixed", top: 20, left: 20 }}
+      >
+        <HelpIcon />
+      </IconButton>
       <h1>Strong App Charts</h1>
       <Button
+        className="button"
         component="label"
         role={undefined}
-        startDecorator={
-          <SvgIcon>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"
-              />
-            </svg>
-          </SvgIcon>
-        }
+        variant="contained"
+        tabIndex={-1}
+        startIcon={<CloudUploadIcon />}
       >
         Upload a file
         <VisuallyHiddenInput onChange={handleFileChange} type="file" />
       </Button>
       <Grow in={active} mountOnEnter unmountOnExit>
         <Paper
+          className="paper"
           elevation={3}
           sx={{
             margin: "10px auto",
@@ -252,7 +345,7 @@ function App() {
           </div>
         </Paper>
       </Grow>
-    </>
+    </ThemeProvider>
   );
 }
 
