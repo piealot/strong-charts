@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import Button from "@mui/material/Button";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -17,6 +17,7 @@ import LightModeIcon from "@mui/icons-material/LightMode";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import HelpIcon from "@mui/icons-material/Help";
 import Drawer from "@mui/material/Drawer";
+import GitHubIcon from "@mui/icons-material/GitHub";
 import "./App.css";
 
 function App() {
@@ -30,19 +31,16 @@ function App() {
   );
   const [open, setOpen] = React.useState(false);
 
-  const VisuallyHiddenInput = styled("input")`
-    clip: rect(0 0 0 0);
-    clip-path: inset(50%);
-    height: 1px;
-    overflow: hidden;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    white-space: nowrap;
-    width: 1px;
-  `;
+  const theme = createTheme({
+    palette: {
+      mode: darkMode ? "dark" : "light",
+    },
+  });
 
   useEffect(() => {
+    if (selectedChartType === "Workouts per week") {
+      setExercise("");
+    }
     prepareData();
   }, [rawData, selectedChartType]);
 
@@ -202,26 +200,44 @@ function App() {
         }
       }
       setData(exercises);
+    } else if (selectedChartType === "Workouts per week") {
+      const workouts = {};
+      const yearWeek = [
+        Number(rawData[0].Date.slice(0, 4)),
+        getWeekNumber(new Date(rawData[0].Date)),
+      ];
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentWeek = getWeekNumber(now);
+      while (yearWeek[0] < currentYear || yearWeek[1] <= currentWeek) {
+        workouts[yearWeek[0].toString() + yearWeek[1].toString()] = [];
+        if (yearWeek[1] >= 53) {
+          yearWeek[0] += 1;
+          yearWeek[1] = 1;
+        } else {
+          yearWeek[1] += 1;
+        }
+      }
+      for (const record of rawData) {
+        if (record.Date) {
+          const year = record.Date.slice(0, 4);
+          const weekNumber = getWeekNumber(new Date(record.Date));
+
+          if (!workouts.hasOwnProperty(year + weekNumber)) {
+            workouts[year + weekNumber] = [record.Date];
+          } else {
+            if (!workouts[year + weekNumber].includes(record.Date)) {
+              workouts[year + weekNumber] = [
+                ...workouts[year + weekNumber],
+                record.Date,
+              ];
+            }
+          }
+        }
+      }
+      setData(workouts);
     }
   }
-  const theme = createTheme({
-    palette: {
-      mode: darkMode ? "dark" : "light",
-    },
-
-    "@global": {
-      "*::-webkit-scrollbar": {
-        width: "0.4em",
-      },
-      "*::-webkit-scrollbar-track": {
-        "-webkit-box-shadow": "inset 0 0 6px rgba(0,0,0,0.00)",
-      },
-      "*::-webkit-scrollbar-thumb": {
-        backgroundcolor: "rgba(0,0,0,.1)",
-        outline: "1px solid slategrey",
-      },
-    },
-  });
 
   return (
     <ThemeProvider theme={theme}>
@@ -259,6 +275,14 @@ function App() {
         {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
       </IconButton>
       <IconButton
+        aria-label="github"
+        sx={{ position: "fixed", bottom: 10, right: 10 }}
+      >
+        <a href="https://github.com/piealot/strong-charts" target="_blank">
+          <GitHubIcon />
+        </a>
+      </IconButton>
+      <IconButton
         onClick={() => {
           setOpen(true);
         }}
@@ -267,7 +291,10 @@ function App() {
       >
         <HelpIcon />
       </IconButton>
-      <h1>Strong App Charts</h1>
+      <h1>
+        Strong <span style={{ color: "#03a9f4" }}>App</span>{" "}
+        <strong>Charts</strong>
+      </h1>
       <Button
         className="button"
         component="label"
@@ -292,6 +319,9 @@ function App() {
             <FormControl fullWidth>
               <InputLabel id="exercise-select-label">Exercise</InputLabel>
               <Select
+                disabled={
+                  selectedChartType === "Workouts per week" ? true : false
+                }
                 labelId="exercise-select-label"
                 id="exercise-select"
                 value={selectedExercise}
@@ -300,13 +330,15 @@ function App() {
                   setExercise(event.target.value);
                 }}
               >
-                {Object.keys(data).map((el) => {
-                  return (
-                    <MenuItem key={el} value={el}>
-                      {el}
-                    </MenuItem>
-                  );
-                })}
+                {Object.keys(data)
+                  .sort()
+                  .map((el) => {
+                    return (
+                      <MenuItem key={el} value={el}>
+                        {el}
+                      </MenuItem>
+                    );
+                  })}
               </Select>
             </FormControl>
             <FormControl fullWidth>
@@ -332,6 +364,11 @@ function App() {
                 <MenuItem key="Total volume" value="Total volume">
                   Total volume
                 </MenuItem>
+                <MenuItem key="Workouts per week" value="Workouts per week">
+                  <span style={{ color: darkMode ? "#42A5F5" : "#0B6BCB" }}>
+                    Workouts per week
+                  </span>
+                </MenuItem>
               </Select>
             </FormControl>
           </div>
@@ -341,12 +378,33 @@ function App() {
               selected={selectedExercise}
               type={selectedChartType}
               data={data}
+              darkMode={darkMode}
             />
           </div>
         </Paper>
       </Grow>
     </ThemeProvider>
   );
+}
+
+const VisuallyHiddenInput = styled("input")`
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  white-space: nowrap;
+  width: 1px;
+`;
+
+function getWeekNumber(date) {
+  const startOfYear = new Date(date.getFullYear(), 0, 1);
+  const diff = date - startOfYear;
+  const oneWeek = 604800000; // milliseconds in a week
+  const weekNumber = Math.ceil(diff / oneWeek);
+  return weekNumber;
 }
 
 export default App;
