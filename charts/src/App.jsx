@@ -20,6 +20,7 @@ import Drawer from "@mui/material/Drawer";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import "./App.css";
 import RangeSlider from "./RangeSlider.jsx";
+import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   const [rawData, setRawData] = useState([]);
@@ -402,6 +403,7 @@ function App() {
           </div>
         </Paper>
       </Grow>
+      <Analytics />
     </ThemeProvider>
   );
 }
