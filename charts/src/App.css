@@ -18,6 +18,9 @@
   gap: 5px;
   padding: 20px;
 }
+.slider{
+  padding: 0 20px 0 62px;
+}
 
 
 .MuiChartsAxis-label{
@@ -58,6 +61,9 @@ h1 {
   }
   .help{
     width: 200px;
+  }
+  .github{
+    display: none !important;
   }
 }
 

@@ -1,11 +1,36 @@
 import { LineChart } from "@mui/x-charts/LineChart";
 import { BarChart } from "@mui/x-charts/BarChart";
+import { useMemo } from "react";
 
-export default function Chart({ selected, type, data, darkMode }) {
+export default function Chart({ selected, type, data, darkMode, range }) {
   const noTimeFormater = (date) => date.toString().slice(4, 15);
+  const barData = useMemo(
+    () => [
+      Object.keys(data).sort(
+        (a, b) =>
+          new Date(a.slice(0, 4), 0, a.slice(4, 6)) -
+          new Date(b.slice(0, 4), 0, b.slice(4, 6))
+      ),
+      Object.keys(data)
+        .sort(
+          (a, b) =>
+            new Date(a.slice(0, 4), 0, a.slice(4, 6)) -
+            new Date(b.slice(0, 4), 0, b.slice(4, 6))
+        )
+        .map((el) => data[el].length),
+    ],
+    [data]
+  );
+
   if (selected && type !== "Workouts per week") {
-    const dates = Object.keys(data[selected]);
-    const values = Object.values(data[selected]);
+    const dates = Object.keys(data[selected]).slice(
+      Math.floor(range[0] * 0.01 * Object.keys(data[selected]).length),
+      Math.floor(range[1] * 0.01 * Object.keys(data[selected]).length)
+    );
+    const values = Object.values(data[selected]).slice(
+      Math.floor(range[0] * 0.01 * Object.values(data[selected]).length),
+      Math.floor(range[1] * 0.01 * Object.values(data[selected]).length)
+    );
     return (
       <LineChart
         xAxis={[
@@ -63,16 +88,23 @@ export default function Chart({ selected, type, data, darkMode }) {
       />
     );
   } else if (type === "Workouts per week") {
-    const weeks = Object.keys(data).sort(
-      (a, b) =>
-        new Date(a.slice(0, 4), 0, a.slice(4, 6)) -
-        new Date(b.slice(0, 4), 0, b.slice(4, 6))
+    const weeks = barData[0].slice(
+      Math.floor(range[0] * 0.01 * barData[0].length),
+      Math.floor(range[1] * 0.01 * barData[0].length)
     );
-    const workouts = weeks.map((el) => data[el].length);
+    const workouts = barData[1].slice(
+      Math.floor(range[0] * 0.01 * barData[1].length),
+      Math.floor(range[1] * 0.01 * barData[1].length)
+    );
+
     return (
       <BarChart
         xAxis={[
-          { scaleType: "band", data: weeks, valueFormatter: weekFormatter },
+          {
+            scaleType: "band",
+            data: weeks,
+            valueFormatter: weekFormatter,
+          },
         ]}
         yAxis={[
           {
@@ -85,6 +117,10 @@ export default function Chart({ selected, type, data, darkMode }) {
             color: darkMode ? "#42A5F5" : "#0B6BCB",
           },
         ]}
+        margin={{
+          left: 50,
+          right: 10,
+        }}
         minWidth={180}
         minHeight={150}
         color="black"

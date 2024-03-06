@@ -19,6 +19,7 @@ import HelpIcon from "@mui/icons-material/Help";
 import Drawer from "@mui/material/Drawer";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import "./App.css";
+import RangeSlider from "./RangeSlider.jsx";
 
 function App() {
   const [rawData, setRawData] = useState([]);
@@ -29,7 +30,8 @@ function App() {
   const [darkMode, setDarkMode] = useState(
     useMediaQuery("(prefers-color-scheme: dark)")
   );
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
+  const [range, setRange] = useState([0, 100]);
 
   const theme = createTheme({
     palette: {
@@ -60,15 +62,17 @@ function App() {
       const parsedData = [];
 
       for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].split(",");
-        const item = {};
+        if (lines[i] !== "") {
+          const line = lines[i].split(",");
+          const item = {};
 
-        for (let j = 0; j < header.length; j++) {
-          const key = header[j].trim();
-          const value = line[j]?.trim().replaceAll('"', "");
-          item[key] = value;
+          for (let j = 0; j < header.length; j++) {
+            const key = header[j].trim();
+            const value = line[j]?.trim().replaceAll('"', "");
+            item[key] = value;
+          }
+          parsedData.push(item);
         }
-        parsedData.push(item);
       }
       if (
         !parsedData[0].hasOwnProperty("Date") ||
@@ -276,6 +280,7 @@ function App() {
       </IconButton>
       <IconButton
         aria-label="github"
+        className="github"
         sx={{ position: "fixed", bottom: 10, right: 10 }}
       >
         <a href="https://github.com/piealot/strong-charts" target="_blank">
@@ -378,7 +383,17 @@ function App() {
               selected={selectedExercise}
               type={selectedChartType}
               data={data}
+              setData={setData}
               darkMode={darkMode}
+              range={range}
+            />
+          </div>
+          <div className="slider">
+            <RangeSlider
+              selected={selectedExercise}
+              type={selectedChartType}
+              range={range}
+              setRange={setRange}
             />
           </div>
         </Paper>
