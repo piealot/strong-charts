@@ -309,7 +309,11 @@ function App() {
         startIcon={<CloudUploadIcon />}
       >
         Upload a file
-        <VisuallyHiddenInput onChange={handleFileChange} type="file" />
+        <VisuallyHiddenInput
+          accept=".csv"
+          onChange={handleFileChange}
+          type="file"
+        />
       </Button>
       <Grow in={active} mountOnEnter unmountOnExit>
         <Paper
